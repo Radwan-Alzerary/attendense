@@ -12,22 +12,22 @@ const port = 3110;
 // Connect to MongoDB using Mongoose
 // ------------------------------
 mongoose.connect('mongodb://admin:fgdfds432rtegf4wtesfdvxwefsd@localhost:27017/attendees?authSource=attendees', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 })
-.then(() => console.log("Connected to MongoDB database"))
-.catch((err) => console.error("Failed to connect to MongoDB:", err.message));
+    .then(() => console.log("Connected to MongoDB database"))
+    .catch((err) => console.error("Failed to connect to MongoDB:", err.message));
 
 // ------------------------------
 // Define the Registration Schema and Model
 // ------------------------------
 const registrationSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  phone: String,
-  token: String,
-  field:String,
-  confirmed: { type: Boolean, default: false },
+    name: String,
+    email: String,
+    phone: String,
+    token: String,
+    field: String,
+    confirmed: { type: Boolean, default: false },
 });
 
 const Registration = mongoose.model('Registration', registrationSchema);
@@ -37,14 +37,14 @@ const Registration = mongoose.model('Registration', registrationSchema);
 // ------------------------------
 // Replace these details with your own Gmail credentials and app password.
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use true for port 465
-  auth: {
-    user: "mdociniraqinfo@gmail.com",
-    pass: "tqnl ppbs gaix joeg", // Your 16-character App Password WITHOUT spaces
-  },
+    service: "Gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // Use true for port 465
+    auth: {
+        user: "mdociniraqinfo@gmail.com",
+        pass: "tqnl ppbs gaix joeg", // Your 16-character App Password WITHOUT spaces
+    },
 });
 
 // ------------------------------
@@ -56,15 +56,15 @@ const transporter = nodemailer.createTransport({
  * @param {Object} details - Contains name, email, and token.
  */
 function sendConfirmationEmail({ name, email, token }) {
-  // Generate unique confirmation URL
-  const confirmUrl = `https://attendance.niuraiq.com:${port}/confirm/${token}`;
+    // Generate unique confirmation URL
+    const confirmUrl = `https://attendance.niuraiq.com/confirm/${token}`;
 
-  const mailOptions = {
-    from: '"radwan" <mdociniraqinfo@gmail.com>',
-    to: email,
-    subject: 'دعوة حضور دورة MDOC',
-    text: `من فضلك قم بتأكيد حضورك عبر الرابط التالي: ${confirmUrl}`,
-    html: `<!DOCTYPE html>
+    const mailOptions = {
+        from: '"mdociniraq" <mdociniraqinfo@gmail.com>',
+        to: email,
+        subject: 'دعوة حضور دورة MDOC',
+        text: `من فضلك قم بتأكيد حضورك عبر الرابط التالي: ${confirmUrl}`,
+        html: `<!DOCTYPE html>
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
@@ -77,7 +77,7 @@ function sendConfirmationEmail({ name, email, token }) {
     .header h1 { margin: 0; font-size: 22px; }
     .header p { margin: 5px 0 0; font-size: 16px; }
     .content { padding: 20px; color: #333333; }
-    .content h2 { color: #007BFF; font-size: 20px; margin-bottom: 15px; }
+    .content h2 { color: #ffffff; font-size: 20px; margin-bottom: 15px; }
     .content p { line-height: 1.6; margin: 10px 0; }
     .button { display: inline-block; background-color: #28a745; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px; margin-top: 20px; font-weight: bold; text-align: center; }
     .footer { background-color: #f1f1f1; color: #777777; padding: 10px; text-align: center; font-size: 12px; }
@@ -89,10 +89,13 @@ function sendConfirmationEmail({ name, email, token }) {
       <h1>4th Multi-Disciplinary Oncology Course (MDOC) Iraq Series</h1>
       <p>Toward Better Care For Women’s Cancers</p>
     </div>
-    <div class="content">
+    <div class="content" style="display: flex;flex-direction: column;align-items: center;">
       <h2>تأكيد الحضور</h2>
-      <p>مرحباً ${name},</p>
-      <p>يرجى تأكيد حضورك بالنقر على الزر أدناه:</p>
+      <h2>مرحبا ${name}</h2>
+      <p>تحية طيبة</p>
+      <p>يسرنا دعوتكم للمشاركة في الدورة الرابعة لكورس سرطانات النساء في العراق، والذي يجمع نخبة الخبراء والمتخصصين لتبادل أحدث التجارب والرؤى في مجال رعاية المرضى. إن حضوركم الكريم يُعد دليلاً على التزامكم بتعزيز مستوى الرعاية الصحية وتقديم أفضل الخدمات.</p>
+      <p>نرجو منكم تأكيد حضوركم عبر النقر على الزر أدناه:</p>
+       <p>يرجى تأكيد حضورك بالنقر على الزر أدناه:</p>
       <a href="${confirmUrl}" class="button">تأكيد الحضور</a>
       <p>مع أطيب التحيات ونتطلع إلى لقائك.</p>
     </div>
@@ -102,15 +105,15 @@ function sendConfirmationEmail({ name, email, token }) {
   </div>
 </body>
 </html>`
-  };
+    };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error(`Error sending email to ${email}:`, error);
-    } else {
-      console.log(`Email sent successfully to ${email}. Message ID: ${info.messageId}`);
-    }
-  });
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error(`Error sending email to ${email}:`, error);
+        } else {
+            console.log(`Email sent successfully to ${email}. Message ID: ${info.messageId}`);
+        }
+    });
 }
 
 // ------------------------------
@@ -127,70 +130,70 @@ function sendConfirmationEmail({ name, email, token }) {
  * @param {string} filePath - Path to the Excel file.
  */
 function processExcelFile(filePath) {
-  // Read the workbook
-  const workbook = XLSX.readFile(filePath);
-  // Assume data is in the first sheet
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  // Convert sheet to JSON format
-  const data = XLSX.utils.sheet_to_json(sheet);
+    // Read the workbook
+    const workbook = XLSX.readFile(filePath);
+    // Assume data is in the first sheet
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    // Convert sheet to JSON format
+    const data = XLSX.utils.sheet_to_json(sheet);
 
-  data.forEach(async (row) => {
-    // Adjust the property names based on your Excel file headers
-    const name = row.NameFirst || row.name;
-    const email = row.Email || row.email;
-    const phone = row.Phone    || row.phone || row.Number || row.number;
-    const field    = row.Field    || row.phone || row.Number || row.number;
-    
-    // Generate a unique token (32 characters long hex string)
-    const token = crypto.randomBytes(16).toString('hex');
+    data.forEach(async (row) => {
+        // Adjust the property names based on your Excel file headers
+        const name = row.NameFirst  + row.NameLast;
+        const email = row.Email || row.email;
+        const phone = row.Phone || row.phone || row.Number || row.number;
+        const field = row.Field || row.phone || row.Number || row.number;
 
-    // Create a new registration document
-    const registration = new Registration({ name, email, phone,field, token });
+        // Generate a unique token (32 characters long hex string)
+        const token = crypto.randomBytes(16).toString('hex');
 
-    try {
-      await registration.save();
-      console.log(`Inserted record for ${name} with email ${email}.`);
-      // After saving, send the confirmation email with the unique URL.
-      sendConfirmationEmail({ name, email, token });
-    } catch (err) {
-      console.error("Error inserting data into MongoDB:", err.message);
-    }
-  });
+        // Create a new registration document
+        const registration = new Registration({ name, email, phone, field, token });
+
+        try {
+            await registration.save();
+            console.log(`Inserted record for ${name} with email ${email}.`);
+            // After saving, send the confirmation email with the unique URL.
+            sendConfirmationEmail({ name, email, token });
+        } catch (err) {
+            console.error("Error inserting data into MongoDB:", err.message);
+        }
+    });
 }
 
 // ------------------------------
 // Express Route for Confirming Attendance
 // ------------------------------
 app.get('/confirm/:token', async (req, res) => {
-  const token = req.params.token;
+    const token = req.params.token;
 
-  try {
-    const registration = await Registration.findOne({ token });
-    if (!registration) {
-      return res.status(404).send("الرابط غير صالح.");
+    try {
+        const registration = await Registration.findOne({ token });
+        if (!registration) {
+            return res.status(404).send("الرابط غير صالح.");
+        }
+
+        if (registration.confirmed) {
+            return res.send("لقد تم تأكيد الحضور مسبقاً.");
+        }
+
+        // Mark as confirmed
+        registration.confirmed = true;
+        await registration.save();
+
+        res.send("تم تاكيد الحضور");
+    } catch (err) {
+        console.error("Error updating registration:", err.message);
+        res.status(500).send("خطأ في الخادم.");
     }
-
-    if (registration.confirmed) {
-      return res.send("لقد تم تأكيد الحضور مسبقاً.");
-    }
-
-    // Mark as confirmed
-    registration.confirmed = true;
-    await registration.save();
-
-    res.send("تم تاكيد الحضور");
-  } catch (err) {
-    console.error("Error updating registration:", err.message);
-    res.status(500).send("خطأ في الخادم.");
-  }
 });
 
 // ------------------------------
 // Start the Server and Process the Excel File
 // ------------------------------
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-  // Replace 'attendees.xlsx' with the path to your Excel file
-  processExcelFile(path.join(__dirname, 'attendis.xlsx'));
+    console.log(`Server is running on http://localhost:${port}`);
+    // Replace 'attendees.xlsx' with the path to your Excel file
+    processExcelFile(path.join(__dirname, 'attendis.xlsx'));
 });
