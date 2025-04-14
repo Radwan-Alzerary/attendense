@@ -41,11 +41,16 @@ const transporter = nodemailer.createTransport({
     service: "Gmail",
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // Use true for port 465
+    secure: true,
     auth: {
         user: "mdociniraqinfo@gmail.com",
-        pass: "tqnl ppbs gaix joeg", // Your 16-character App Password WITHOUT spaces
+        pass: "tqnl ppbs gaix joeg",
     },
+    pool: true,                // Enable pooling
+    maxConnections: 5,         // Limit the number of connections
+    maxMessages: 100,          // Limit the number of messages per connection
+    rateDelta: 5000,          // Rate period in milliseconds (1 minute)
+    rateLimit: 50              // Limit the number of messages per rate period
 });
 
 // ------------------------------
