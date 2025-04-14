@@ -8,11 +8,10 @@ const mongoose = require('mongoose');
 
 const app = express();
 const port = 3110;
-
 // ------------------------------
 // Connect to MongoDB using Mongoose
 // ------------------------------
-mongoose.connect('mongodb://localhost:27017/attendees', {
+mongoose.connect('mongodb://admin:fgdfds432rtegf4wtesfdvxwefsd@localhost:27017/attendees?authSource=attendees', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
