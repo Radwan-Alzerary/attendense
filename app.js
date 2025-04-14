@@ -140,7 +140,7 @@ function processExcelFile(filePath) {
 
     data.forEach(async (row) => {
         // Adjust the property names based on your Excel file headers
-        const name = row.NameFirst  + row.NameLast;
+        const name = row.NameFirst  + " " +  row.NameLast;
         const email = row.Email || row.email;
         const phone = row.Phone || row.phone || row.Number || row.number;
         const field = row.Field || row.phone || row.Number || row.number;
