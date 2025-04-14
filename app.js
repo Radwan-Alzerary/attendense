@@ -192,5 +192,5 @@ app.get('/confirm/:token', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
   // Replace 'attendees.xlsx' with the path to your Excel file
-//   processExcelFile(path.join(__dirname, 'attendis.xlsx'));
+  processExcelFile(path.join(__dirname, 'attendis.xlsx'));
 });
