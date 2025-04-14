@@ -1,4 +1,3 @@
-// Import required modules
 const express = require('express');
 const nodemailer = require('nodemailer');
 const XLSX = require('xlsx');
@@ -8,6 +7,7 @@ const mongoose = require('mongoose');
 
 const app = express();
 const port = 3110;
+
 // ------------------------------
 // Connect to MongoDB using Mongoose
 // ------------------------------
@@ -21,6 +21,7 @@ mongoose.connect('mongodb://admin:fgdfds432rtegf4wtesfdvxwefsd@localhost:27017/a
 // ------------------------------
 // Define the Registration Schema and Model
 // ------------------------------
+// Added field: massageSendSusses to track if the email was sent successfully.
 const registrationSchema = new mongoose.Schema({
     name: String,
     email: String,
@@ -28,6 +29,7 @@ const registrationSchema = new mongoose.Schema({
     token: String,
     field: String,
     confirmed: { type: Boolean, default: false },
+    massageSendSusses: { type: Boolean, default: false } // new field
 });
 
 const Registration = mongoose.model('Registration', registrationSchema);
@@ -35,7 +37,6 @@ const Registration = mongoose.model('Registration', registrationSchema);
 // ------------------------------
 // Setup Nodemailer Transporter
 // ------------------------------
-// Replace these details with your own Gmail credentials and app password.
 const transporter = nodemailer.createTransport({
     service: "Gmail",
     host: "smtp.gmail.com",
@@ -52,8 +53,10 @@ const transporter = nodemailer.createTransport({
 // ------------------------------
 /**
  * Sends a confirmation email to a recipient.
+ * Updates the registration document's `massageSendSusses` field to true when the email is sent.
  *
  * @param {Object} details - Contains name, email, and token.
+ * @returns {Promise} - Resolves when the email is sent and the DB updated.
  */
 function sendConfirmationEmail({ name, email, token }) {
     // Generate unique confirmation URL
@@ -95,7 +98,6 @@ function sendConfirmationEmail({ name, email, token }) {
       <p>تحية طيبة</p>
       <p>يسرنا دعوتكم للمشاركة في الدورة الرابعة لكورس سرطانات النساء في العراق، والذي يجمع نخبة الخبراء والمتخصصين لتبادل أحدث التجارب والرؤى في مجال رعاية المرضى. إن حضوركم الكريم يُعد دليلاً على التزامكم بتعزيز مستوى الرعاية الصحية وتقديم أفضل الخدمات.</p>
       <p>نرجو منكم تأكيد حضوركم عبر النقر على الزر أدناه:</p>
-       <p>يرجى تأكيد حضورك بالنقر على الزر أدناه:</p>
       <a href="${confirmUrl}" class="button">تأكيد الحضور</a>
       <p>مع أطيب التحيات ونتطلع إلى لقائك.</p>
     </div>
@@ -107,13 +109,32 @@ function sendConfirmationEmail({ name, email, token }) {
 </html>`
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error(`Error sending email to ${email}:`, error);
-        } else {
-            console.log(`Email sent successfully to ${email}. Message ID: ${info.messageId}`);
-        }
+    // Return a Promise that resolves when the email is sent and the database updated.
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, async (error, info) => {
+            if (error) {
+                console.error(`Error sending email to ${email}:`, error);
+                return reject(error);
+            } else {
+                console.log(`Email sent successfully to ${email}. Message ID: ${info.messageId}`);
+                try {
+                    // Update the record: mark message as sent successfully.
+                    await Registration.updateOne({ token }, { massageSendSusses: true });
+                    resolve(info);
+                } catch (updateError) {
+                    console.error(`Error updating send status for ${email}:`, updateError);
+                    reject(updateError);
+                }
+            }
+        });
     });
+}
+
+// ------------------------------
+// Delay function for sequential processing
+// ------------------------------
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ------------------------------
@@ -122,10 +143,11 @@ function sendConfirmationEmail({ name, email, token }) {
 /**
  * Reads an Excel file and processes each row.
  *
- * Expects the Excel file to have columns (or similar) for:
- * - Name (or name)
- * - Email (or email)
- * - Phone (or phone / Number)
+ * For each row:
+ *  - It checks whether the email already exists in the database.
+ *  - If it exists and the email has not been sent (massageSendSusses is false), it attempts to resend the confirmation email.
+ *  - If it does not exist, it creates a new registration and sends the confirmation email.
+ *  - A 3-second delay is inserted between processing rows.
  *
  * @param {string} filePath - Path to the Excel file.
  */
@@ -138,28 +160,45 @@ function processExcelFile(filePath) {
     // Convert sheet to JSON format
     const data = XLSX.utils.sheet_to_json(sheet);
 
-    data.forEach(async (row) => {
-        // Adjust the property names based on your Excel file headers
-        const name = row.NameFirst  + " " +  row.NameLast;
-        const email = row.Email || row.email;
-        const phone = row.Phone || row.phone || row.Number || row.number;
-        const field = row.Field || row.phone || row.Number || row.number;
+    (async function processRows() {
+        for (const row of data) {
+            // Adjust the property names based on your Excel file headers.
+            const name = `${row.NameFirst || ''} ${row.NameLast || ''}`.trim();
+            const email = row.Email || row.email;
+            const phone = row.Phone || row.phone || row.Number || row.number;
+            const field = row.Field || ''; // Adjust as needed
 
-        // Generate a unique token (32 characters long hex string)
-        const token = crypto.randomBytes(16).toString('hex');
+            if (!email) {
+                console.warn("No email found for row, skipping.");
+                continue;
+            }
 
-        // Create a new registration document
-        const registration = new Registration({ name, email, phone, field, token });
+            try {
+                // Check if the registration already exists by email.
+                let registration = await Registration.findOne({ email });
+                if (registration) {
+                    console.log(`Record already exists for ${email}.`);
+                    // If the email exists but the message hasn't been sent, resend the confirmation email.
+                    if (!registration.massageSendSusses) {
+                        console.log(`Resending confirmation email to ${email}...`);
+                        await sendConfirmationEmail({ name: registration.name, email: registration.email, token: registration.token });
+                    }
+                } else {
+                    // Email does not exist; create a new registration.
+                    const token = crypto.randomBytes(16).toString('hex');
+                    registration = new Registration({ name, email, phone, field, token });
+                    await registration.save();
+                    console.log(`Inserted record for ${name} with email ${email}.`);
+                    await sendConfirmationEmail({ name, email, token });
+                }
+            } catch (err) {
+                console.error(`Error processing row for email ${email}:`, err.message);
+            }
 
-        try {
-            await registration.save();
-            console.log(`Inserted record for ${name} with email ${email}.`);
-            // After saving, send the confirmation email with the unique URL.
-            sendConfirmationEmail({ name, email, token });
-        } catch (err) {
-            console.error("Error inserting data into MongoDB:", err.message);
+            // Wait 3 seconds before processing the next record.
+            await delay(3000);
         }
-    });
+    })();
 }
 
 // ------------------------------
@@ -178,7 +217,7 @@ app.get('/confirm/:token', async (req, res) => {
             return res.send("لقد تم تأكيد الحضور مسبقاً.");
         }
 
-        // Mark as confirmed
+        // Mark as confirmed and save the update.
         registration.confirmed = true;
         await registration.save();
 
@@ -194,6 +233,6 @@ app.get('/confirm/:token', async (req, res) => {
 // ------------------------------
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
-    // Replace 'attendees.xlsx' with the path to your Excel file
+    // Replace 'attendis.xlsx' with the correct path to your Excel file.
     processExcelFile(path.join(__dirname, 'attendis.xlsx'));
 });
